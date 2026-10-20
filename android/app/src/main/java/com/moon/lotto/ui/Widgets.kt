@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -184,6 +185,33 @@ fun GuideCard(vm: LottoViewModel) {
         Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             androidx.compose.material3.OutlinedButton(onClick = { vm.showHelp = true }, Modifier.weight(1f)) { Text("도움말 보기") }
             Button(onClick = vm::dismissGuide, Modifier.weight(1f)) { Text("알겠어요") }
+        }
+    }
+}
+
+/** 1~45 공을 눌러 하나 고르기. 고른 공만 진하게 */
+@Composable
+fun BallPicker(selected: Int, onPick: (Int) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        (1..45).chunked(9).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                row.forEach { n ->
+                    val on = n == selected
+                    Box(
+                        Modifier.weight(1f).aspectRatio(1f).clip(CircleShape)
+                            .background(if (on) ballColor(n) else MaterialTheme.colorScheme.surfaceVariant)
+                            .border(BorderStroke(if (on) 2.dp else 0.dp, if (on) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.surfaceVariant), CircleShape)
+                            .clickable { onPick(n) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "$n", fontSize = 13.sp,
+                            fontWeight = if (on) FontWeight.Bold else FontWeight.Normal,
+                            color = if (on) androidx.compose.ui.graphics.Color.White else MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+            }
         }
     }
 }

@@ -72,7 +72,8 @@ fun StatScreen(vm: LottoViewModel) = ScreenColumn {
     }
 
     SectionCard("🔍 번호 하나 자세히 보기", explain = "궁금한 번호를 고르면 그 번호의 기록을 보여 줘요. '평균 간격'은 보통 몇 회마다 한 번 나오는지예요.") {
-        Select("번호 고르기", Nums.ALL, vm.lensNum, { "${it}번" }) { vm.lensNum = it }
+        Hint("번호를 눌러 고르세요", Modifier.padding(bottom = 6.dp))
+        BallPicker(vm.lensNum) { vm.lensNum = it }
         val l = s.lens(vm.lensNum, r)
         Column(Modifier.padding(top = 10.dp)) {
             Row { Ball(l.n, 40.dp) }
