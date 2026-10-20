@@ -4,7 +4,7 @@ name: draws
 on:
   schedule:
     - cron: "7 13,15 * * 6"   # 토 22:07, 24:07 (한국 시간)
-    - cron: "7 1 * * 0"       # 일 10:07 (놓쳤을 때 한 번 더)
+    - cron: "7 1 * * 0,1"     # 일·월 10:07 (놓쳤을 때 한 번 더)
   workflow_dispatch:
 
 permissions:
