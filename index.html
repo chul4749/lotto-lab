@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>로또 1등 연구소</title>
+<meta name="description" content="재미로 하는 로또 번호 연구 — 통계 보기, 번호 뽑기, 카페에 글 올리기">
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1f1f1f;--sub:#6b6b6b;--line:#e4e0d8;--accent:#d6452f;--accent-ink:#fff;--soft:#f1ede5}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#16171a;--card:#202226;--ink:#ececec;--sub:#a0a0a0;--line:#33363b;--accent:#ff6b55;--accent-ink:#16171a;--soft:#2a2c31}}
+:root[data-theme="dark"]{--bg:#16171a;--card:#202226;--ink:#ececec;--sub:#a0a0a0;--line:#33363b;--accent:#ff6b55;--accent-ink:#16171a;--soft:#2a2c31}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;line-height:1.55}
+header{padding:20px 16px 8px;max-width:720px;margin:0 auto}
+header h1{margin:0;font-size:22px}
+header p{margin:4px 0 0;color:var(--sub);font-size:13px}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+nav div{display:flex;max-width:720px;margin:0 auto}
+nav button{flex:1;border:0;background:none;color:var(--sub);font:inherit;font-size:15px;padding:12px 4px;border-bottom:3px solid transparent;cursor:pointer}
+nav button.on{color:var(--ink);font-weight:700;border-color:var(--accent)}
+main{max-width:720px;margin:0 auto;padding:12px 16px 48px}
+section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h2{font-size:16px;margin:0 0 10px}
+.sub{color:var(--sub);font-size:13px}
+label{display:block;font-size:13px;color:var(--sub);margin:10px 0 4px}
+select,input,textarea{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+textarea{min-height:240px;resize:vertical;font-size:14px}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.btn{display:inline-block;border:0;border-radius:10px;padding:11px 14px;font:inherit;font-size:15px;font-weight:700;background:var(--accent);color:var(--accent-ink);cursor:pointer;text-align:center;text-decoration:none}
+.btn.ghost{background:var(--soft);color:var(--ink);border:1px solid var(--line);font-weight:500}
+.btn.sm{padding:6px 10px;font-size:13px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.btns .btn{flex:1;min-width:120px}
+.grid{display:grid;grid-template-columns:repeat(9,1fr);gap:5px}
+.cell{aspect-ratio:1;border-radius:50%;border:1px solid var(--line);background:var(--soft);color:var(--ink);font:inherit;font-size:13px;cursor:pointer;padding:0}
+.cell.fix{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.cell.ex{text-decoration:line-through;opacity:.35}
+.balls{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ball{width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.35);flex:none}
+.ball.miss{opacity:.3}
+.b1{background:#f2b600}.b2{background:#3fa8de}.b3{background:#e8504c}.b4{background:#8a8a8a}.b5{background:#7fb51f}
+.plus{color:var(--sub);font-weight:700}
+.pick{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.pick:first-child{border-top:0}
+.tag{font-size:12px;color:var(--sub)}
+.rank{font-size:13px;font-weight:700;color:var(--accent)}
+.bars{display:grid;grid-template-columns:28px 1fr 34px;gap:3px 6px;align-items:center;font-size:12px}
+.bar{height:12px;border-radius:6px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.notice{background:var(--soft);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--sub)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:20px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:.95}
+footer{max-width:720px;margin:0 auto;padding:0 16px 32px;color:var(--sub);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎱 로또 1등 연구소</h1>
+  <p id="dataInfo">당첨번호 불러오는 중…</p>
+</header>
+<nav><div>
+  <button data-tab="gen" class="on">번호 뽑기</button>
+  <button data-tab="stat">통계</button>
+  <button data-tab="mine">내 번호</button>
+  <button data-tab="cafe">카페 글쓰기</button>
+</div></nav>
+<main>
+
+<section id="gen" class="on">
+  <div class="card">
+    <h2>연구 방법</h2>
+    <label for="strategy">뽑는 방식</label>
+    <select id="strategy">
+      <option value="random">완전 랜덤</option>
+      <option value="hot">많이 나온 번호 위주 (핫)</option>
+      <option value="cold">오래 안 나온 번호 위주 (콜드)</option>
+      <option value="balance">균형형 (홀짝 2~4개, 합계 100~175, 3연번 없음)</option>
+      <option value="mix">핫 3 + 콜드 3 섞기</option>
+    </select>
+    <div class="row">
+      <div><label for="range">분석 범위</label>
+        <select id="range"><option value="20">최근 20회</option><option value="50" selected>최근 50회</option><option value="100">최근 100회</option><option value="0">전체</option></select></div>
+      <div><label for="games">게임 수</label>
+        <select id="games"><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option></select></div>
+    </div>
+    <label>고정수·제외수 <span class="sub">(한 번 누르면 고정, 두 번 누르면 제외)</span></label>
+    <div class="grid" id="numGrid"></div>
+    <div class="btns">
+      <button class="btn" id="genBtn">번호 뽑기</button>
+      <button class="btn ghost" id="clearGrid">고정·제외 지우기</button>
+    </div>
+  </div>
+  <div class="card" id="genResult" hidden>
+    <h2>이번 연구 결과 <span class="sub" id="genFor"></span></h2>
+    <div id="genList"></div>
+    <div class="btns">
+      <button class="btn ghost" id="saveAll">모두 내 번호에 저장</button>
+      <button class="btn" id="toCafe">카페 글로 만들기</button>
+    </div>
+  </div>
+</section>
+
+<section id="stat">
+  <div class="card">
+    <div class="row">
+      <div><label for="statRange">통계 범위</label>
+        <select id="statRange"><option value="20">최근 20회</option><option value="50" selected>최근 50회</option><option value="100">최근 100회</option><option value="0">전체</option></select></div>
+      <div><label for="statSort">정렬</label>
+        <select id="statSort"><option value="num">번호순</option><option value="freq">많이 나온 순</option></select></div>
+    </div>
+  </div>
+  <div class="card"><h2>최근 당첨번호</h2><div id="recent"></div></div>
+  <div class="card"><h2>핫 번호 TOP 6 <span class="sub">많이 나온</span></h2><div class="balls" id="hot"></div>
+    <h2 style="margin-top:14px">콜드 번호 TOP 6 <span class="sub">오래 안 나온</span></h2><div id="cold"></div></div>
+  <div class="card"><h2>홀짝 비율</h2><div id="oddEven"></div></div>
+  <div class="card"><h2>번호별 출현 횟수 <span class="sub">(보너스 제외)</span></h2><div class="bars" id="freqBars"></div></div>
+</section>
+
+<section id="mine">
+  <div class="card"><h2>내 연구 번호</h2>
+    <p class="sub">저장한 번호는 이 기기에만 남아요. 추첨이 끝나면 자동으로 등수를 확인해요.</p>
+    <div id="mineList"></div>
+    <div class="btns"><button class="btn" id="mineToCafe">당첨 확인 글 만들기</button></div>
+  </div>
+</section>
+
+<section id="cafe">
+  <div class="card"><h2>카페 설정</h2>
+    <label for="cafeUrl">카페 주소</label>
+    <input id="cafeUrl" placeholder="예: https://cafe.naver.com/내카페주소">
+    <label for="nick">글에 넣을 닉네임 (선택)</label>
+    <input id="nick" placeholder="예: 연구소장">
+  </div>
+  <div class="card"><h2>글 만들기</h2>
+    <label for="tpl">글 종류</label>
+    <select id="tpl">
+      <option value="pick">이번 주 연구 번호</option>
+      <option value="report">주간 통계 리포트</option>
+      <option value="check">당첨 확인 결과</option>
+    </select>
+    <label for="postTitle">제목</label>
+    <input id="postTitle">
+    <label for="postBody">본문 <span class="sub">(자유롭게 고쳐도 돼요)</span></label>
+    <textarea id="postBody"></textarea>
+    <div class="btns">
+      <button class="btn ghost" id="copyAll">제목+본문 복사</button>
+      <button class="btn ghost" id="shareBtn">공유하기</button>
+    </div>
+    <div class="btns"><button class="btn" id="openCafe">복사하고 카페 열기</button></div>
+    <p class="sub">카페가 열리면 글쓰기 → 게시판 고르고 → 본문에 붙여넣기 하면 돼요. 제목은 첫 줄에 있어요.</p>
+  </div>
+</section>
+
+</main>
+<footer>로또는 매 회차 독립 추첨이라 지난 통계로 당첨 확률이 오르지는 않아요. 재미로만 즐겨 주세요. 당첨번호 출처: 동행복권.</footer>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('lotto.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('lotto.' + k, JSON.stringify(v)); } catch (e) {} }
+};
+let draws = [];               // 오래된 회차부터
+let lastPicks = [];           // 방금 뽑은 번호
+let gridState = {};           // 번호 -> 'fix' | 'ex'
+let saved = store.get('saved', []);  // [{nums, round, strategy, at}]
+
+const STRATEGY = { random: '완전 랜덤', hot: '핫 번호 위주', cold: '콜드 번호 위주', balance: '균형형', mix: '핫3+콜드3' };
+const latestNo = () => draws.length ? draws[draws.length - 1].no : 0;
+const nextNo = () => latestNo() + 1;
+const colorOf = n => 'b' + Math.min(5, Math.ceil(n / 10));
+const ball = (n, cls = '') => `<span class="ball ${colorOf(n)} ${cls}">${n}</span>`;
+const range = r => r > 0 ? draws.slice(-r) : draws;
+
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('on'), 1600); }
+
+// ---------- 통계 ----------
+function freq(list) { const f = Array(46).fill(0); list.forEach(d => d.nums.forEach(n => f[n]++)); return f; }
+function gaps() { // 마지막으로 나온 뒤 지난 회차 수
+  const g = Array(46).fill(draws.length);
+  draws.forEach((d, i) => d.nums.forEach(n => g[n] = draws.length - 1 - i));
+  return g;
+}
+function hotList(r) { const f = freq(range(r)); return [...Array(45)].map((_, i) => i + 1).sort((a, b) => f[b] - f[a] || a - b); }
+function coldList() { const g = gaps(); return [...Array(45)].map((_, i) => i + 1).sort((a, b) => g[b] - g[a] || a - b); }
+
+// ---------- 뽑기 ----------
+function weightedPick(pool, weights, k) {
+  const out = []; pool = pool.slice();
+  while (out.length < k && pool.length) {
+    const total = pool.reduce((s, n) => s + weights[n], 0);
+    let x = Math.random() * total, i = 0;
+    for (; i < pool.length - 1; i++) { x -= weights[pool[i]]; if (x <= 0) break; }
+    out.push(pool.splice(i, 1)[0]);
+  }
+  return out;
+}
+function balanced(nums) {
+  const odd = nums.filter(n => n % 2).length, sum = nums.reduce((a, b) => a + b, 0);
+  const s = nums.slice().sort((a, b) => a - b);
+  for (let i = 2; i < 6; i++) if (s[i] - s[i - 2] === 2 && s[i] - s[i - 1] === 1) return false;
+  return odd >= 2 && odd <= 4 && sum >= 100 && sum <= 175;
+}
+function makeOne(strategy, r) {
+  const fixed = Object.keys(gridState).filter(n => gridState[n] === 'fix').map(Number);
+  const pool = [...Array(45)].map((_, i) => i + 1).filter(n => !gridState[n]);
+  const need = 6 - fixed.length;
+  const w = Array(46).fill(1);
+  if (draws.length && (strategy === 'hot' || strategy === 'cold')) {
+    if (strategy === 'hot') { const f = freq(range(r)); for (let n = 1; n <= 45; n++) w[n] = 1 + f[n] * 2; }
+    else { const g = gaps(); for (let n = 1; n <= 45; n++) w[n] = 1 + g[n]; }
+  }
+  for (let tries = 0; tries < 3000; tries++) {
+    let nums;
+    if (strategy === 'mix' && draws.length) {
+      const hot = hotList(r).filter(n => pool.includes(n)).slice(0, 12);
+      const cold = coldList().filter(n => pool.includes(n) && !hot.includes(n)).slice(0, 12);
+      const h = Math.ceil(need / 2);
+      nums = weightedPick(hot, w, h).concat(weightedPick(cold, w, need - h));
+    } else nums = weightedPick(pool, w, need);
+    nums = fixed.concat(nums).sort((a, b) => a - b);
+    if (nums.length < 6) return null;
+    if (strategy !== 'balance' || balanced(nums)) return nums;
+  }
+  return null;
+}
+function generate() {
+  const fixedCount = Object.values(gridState).filter(v => v === 'fix').length;
+  if (fixedCount > 5) { toast('고정수는 5개까지만 돼요'); return; }
+  const strategy = $('#strategy').value, r = +$('#range').value, games = +$('#games').value;
+  lastPicks = [];
+  for (let i = 0; i < games; i++) {
+    const nums = makeOne(strategy, r);
+    if (!nums) { toast('조건이 너무 빡빡해요. 고정·제외수를 줄여 보세요'); break; }
+    lastPicks.push({ nums, strategy, round: nextNo() });
+  }
+  renderPicks();
+}
+function renderPicks() {
+  $('#genResult').hidden = !lastPicks.length;
+  $('#genFor').textContent = draws.length ? `${nextNo()}회 대비` : '';
+  $('#genList').innerHTML = lastPicks.map((p, i) => `<div class="pick"><div class="balls">${'ABCDE'[i]} ${p.nums.map(n => ball(n)).join('')}</div>
+    <button class="btn ghost sm" data-save="${i}">저장</button></div>`).join('');
+}
+function savePick(p) { saved.unshift({ ...p, at: Date.now() }); store.set('saved', saved); }
+
+function renderGrid() {
+  $('#numGrid').innerHTML = [...Array(45)].map((_, i) => `<button class="cell ${gridState[i + 1] || ''}" data-n="${i + 1}">${i + 1}</button>`).join('');
+}
+
+// ---------- 통계 화면 ----------
+function renderStats() {
+  if (!draws.length) {
+    ['#recent', '#hot', '#cold', '#oddEven', '#freqBars'].forEach(s => $(s).innerHTML = '');
+    $('#recent').innerHTML = '<div class="notice">당첨번호를 아직 못 받았어요. 잠시 뒤 다시 열어 주세요. 번호 뽑기(랜덤·균형형)는 지금도 돼요.</div>';
+    return;
+  }
+  const r = +$('#statRange').value, list = range(r), f = freq(list), g = gaps();
+  $('#recent').innerHTML = draws.slice(-5).reverse().map(d => `<div class="pick"><div><div class="tag">${d.no}회 · ${d.date}</div>
+    <div class="balls">${d.nums.map(n => ball(n)).join('')}<span class="plus">+</span>${ball(d.bonus)}</div></div></div>`).join('');
+  $('#hot').innerHTML = hotList(r).slice(0, 6).map(n => `<span title="${f[n]}회">${ball(n)}</span>`).join('') +
+    `<div class="sub" style="width:100%">${hotList(r).slice(0, 6).map(n => `${n}번 ${f[n]}회`).join(' · ')}</div>`;
+  $('#cold').innerHTML = `<div class="balls">${coldList().slice(0, 6).map(n => ball(n)).join('')}</div>
+    <div class="sub">${coldList().slice(0, 6).map(n => `${n}번 ${g[n]}회째`).join(' · ')}</div>`;
+  const oe = Array(7).fill(0); list.forEach(d => oe[d.nums.filter(n => n % 2).length]++);
+  const maxOe = Math.max(...oe);
+  $('#oddEven').innerHTML = `<div class="bars">${oe.map((c, k) => `<span>${k}:${6 - k}</span><div class="bar" style="width:${maxOe ? c / maxOe * 100 : 0}%;background:var(--accent)"></div><span>${c}회</span>`).join('')}</div>
+    <p class="sub">홀:짝 개수. 최근 ${list.length}회 기준</p>`;
+  const max = Math.max(...f.slice(1));
+  let order = [...Array(45)].map((_, i) => i + 1);
+  if ($('#statSort').value === 'freq') order.sort((a, b) => f[b] - f[a] || a - b);
+  const colors = { b1: '#f2b600', b2: '#3fa8de', b3: '#e8504c', b4: '#8a8a8a', b5: '#7fb51f' };
+  $('#freqBars').innerHTML = order.map(n => `<span>${n}</span><div class="bar" style="width:${max ? f[n] / max * 100 : 0}%;background:${colors[colorOf(n)]}"></div><span>${f[n]}</span>`).join('');
+}
+
+// ---------- 내 번호 ----------
+function rankOf(nums, d) {
+  const hit = nums.filter(n => d.nums.includes(n)).length, bonus = nums.includes(d.bonus);
+  return hit === 6 ? 1 : hit === 5 && bonus ? 2 : hit === 5 ? 3 : hit === 4 ? 4 : hit === 3 ? 5 : 0;
+}
+const drawOf = no => draws.find(d => d.no === no);
+function renderMine() {
+  if (!saved.length) { $('#mineList').innerHTML = '<div class="notice">아직 저장한 번호가 없어요. 번호 뽑기에서 저장해 보세요.</div>'; return; }
+  $('#mineList').innerHTML = saved.map((p, i) => {
+    const d = drawOf(p.round);
+    let status = '<span class="tag">추첨 전</span>', balls = p.nums.map(n => ball(n)).join('');
+    if (d) {
+      const rk = rankOf(p.nums, d);
+      status = `<span class="rank">${rk ? rk + '등!' : '낙첨'}</span>`;
+      balls = p.nums.map(n => ball(n, d.nums.includes(n) || n === d.bonus ? '' : 'miss')).join('');
+    }
+    return `<div class="pick"><div><div class="tag">${p.round}회 · ${STRATEGY[p.strategy] || ''} · ${status}</div><div class="balls">${balls}</div></div>
+      <button class="btn ghost sm" data-del="${i}">삭제</button></div>`;
+  }).join('');
+}
+
+// ---------- 카페 글 ----------
+const numLine = nums => nums.join(', ');
+const sign = () => { const n = $('#nick').value.trim(); return n ? `\n\n— ${n} (로또 1등 연구소)` : ''; };
+const footerTxt = '\n\n※ 재미로 하는 연구예요. 로또는 매 회차 독립 추첨입니다.';
+function buildPost(kind) {
+  const r = +$('#range').value, rLabel = r ? `최근 ${r}회` : '전체 회차';
+  if (kind === 'pick') {
+    const picks = lastPicks.length ? lastPicks : saved.filter(p => p.round === nextNo()).slice(0, 5);
+    const strategy = picks[0] ? STRATEGY[picks[0].strategy] : '';
+    const fixed = Object.keys(gridState).filter(n => gridState[n] === 'fix'), ex = Object.keys(gridState).filter(n => gridState[n] === 'ex');
+    let body = `🎱 ${nextNo()}회 연구 번호\n\n방식: ${strategy || '-'}${draws.length ? ` (${rLabel} 분석)` : ''}\n`;
+    if (fixed.length) body += `고정수: ${fixed.join(', ')}\n`;
+    if (ex.length) body += `제외수: ${ex.join(', ')}\n`;
+    body += '\n' + (picks.length ? picks.map((p, i) => `${'ABCDE'[i]})  ${numLine(p.nums)}`).join('\n') : '(번호 뽑기에서 먼저 번호를 뽑아 주세요)');
+    if (draws.length) body += `\n\n📊 참고 — ${rLabel} 핫 번호: ${hotList(r).slice(0, 6).join(', ')}\n콜드 번호: ${coldList().slice(0, 6).join(', ')}`;
+    return { title: `[연구번호] ${nextNo()}회 ${strategy} 번호 공유합니다`, body: body + '\n\n여러분 번호도 댓글로 남겨 주세요!' + footerTxt + sign() };
+  }
+  if (kind === 'report') {
+    if (!draws.length) return { title: '[주간리포트]', body: '당첨번호를 아직 못 받았어요.' };
+    const d = draws[draws.length - 1], sr = +$('#statRange').value, sl = sr ? `최근 ${sr}회` : '전체', list = range(sr), f = freq(list), g = gaps();
+    const sum = d.nums.reduce((a, b) => a + b, 0), odd = d.nums.filter(n => n % 2).length;
+    const prize = d.prize ? `\n1등 ${d.winners}명 · 1인당 ${Math.round(d.prize / 1e8 * 10) / 10}억 원` : '';
+    let body = `📢 ${d.no}회 (${d.date}) 당첨번호\n\n${numLine(d.nums)}  + 보너스 ${d.bonus}${prize}\n\n` +
+      `· 합계 ${sum} · 홀짝 ${odd}:${6 - odd}\n\n` +
+      `🔥 ${sl} 핫 번호\n${hotList(sr).slice(0, 6).map(n => `${n}번(${f[n]}회)`).join(', ')}\n\n` +
+      `🧊 오래 안 나온 번호\n${coldList().slice(0, 6).map(n => `${n}번(${g[n]}회째)`).join(', ')}\n\n` +
+      `다음 ${nextNo()}회도 함께 연구해 봐요!`;
+    return { title: `[주간리포트] ${d.no}회 당첨번호와 통계`, body: body + footerTxt + sign() };
+  }
+  const checked = saved.filter(p => drawOf(p.round));
+  if (!checked.length) return { title: '[당첨확인]', body: '아직 추첨이 끝난 저장 번호가 없어요.' };
+  const round = checked[0].round, d = drawOf(round), mine = checked.filter(p => p.round === round);
+  const best = Math.min(...mine.map(p => rankOf(p.nums, d) || 9));
+  const body = `${round}회 당첨번호: ${numLine(d.nums)} + ${d.bonus}\n\n내 연구 번호\n` +
+    mine.map(p => { const rk = rankOf(p.nums, d), hit = p.nums.filter(n => d.nums.includes(n)); return `${numLine(p.nums)}  → ${rk ? rk + '등' : '낙첨'} (${hit.length}개 맞음${hit.length ? ': ' + hit.join(', ') : ''})`; }).join('\n') +
+    `\n\n${best < 9 ? '🎉 당첨!' : '다음엔 꼭!'} 다들 결과 어떠셨나요?`;
+  return { title: `[당첨확인] ${round}회 ${best < 9 ? best + '등 당첨!' : '결과 공유'}`, body: body + footerTxt + sign() };
+}
+function fillPost() { const p = buildPost($('#tpl').value); $('#postTitle').value = p.title; $('#postBody').value = p.body; }
+const postText = () => `${$('#postTitle').value}\n\n${$('#postBody').value}`;
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch (e) { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); const ok = document.execCommand('copy'); t.remove(); return ok; }
+}
+
+// ---------- 화면 전환·이벤트 ----------
+function showTab(id) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === id));
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === id));
+  if (id === 'stat') renderStats();
+  if (id === 'mine') renderMine();
+  if (id === 'cafe' && !$('#postBody').value) fillPost();
+  store.set('tab', id);
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+$('#numGrid').onclick = e => {
+  const n = e.target.dataset.n; if (!n) return;
+  gridState[n] = !gridState[n] ? 'fix' : gridState[n] === 'fix' ? 'ex' : undefined;
+  if (!gridState[n]) delete gridState[n];
+  renderGrid();
+};
+$('#clearGrid').onclick = () => { gridState = {}; renderGrid(); };
+$('#genBtn').onclick = generate;
+$('#genList').onclick = e => { const i = e.target.dataset.save; if (i == null) return; savePick(lastPicks[i]); e.target.textContent = '저장됨'; e.target.disabled = true; };
+$('#saveAll').onclick = () => { lastPicks.forEach(savePick); toast(`${lastPicks.length}게임 저장했어요`); document.querySelectorAll('[data-save]').forEach(b => { b.textContent = '저장됨'; b.disabled = true; }); };
+$('#toCafe').onclick = () => { $('#tpl').value = 'pick'; fillPost(); showTab('cafe'); };
+$('#mineToCafe').onclick = () => { $('#tpl').value = 'check'; fillPost(); showTab('cafe'); };
+$('#mineList').onclick = e => { const i = e.target.dataset.del; if (i == null) return; saved.splice(i, 1); store.set('saved', saved); renderMine(); };
+$('#statRange').onchange = renderStats; $('#statSort').onchange = renderStats;
+$('#tpl').onchange = fillPost;
+$('#cafeUrl').value = store.get('cafeUrl', ''); $('#nick').value = store.get('nick', '');
+$('#cafeUrl').onchange = () => store.set('cafeUrl', $('#cafeUrl').value.trim());
+$('#nick').onchange = () => { store.set('nick', $('#nick').value.trim()); fillPost(); };
+$('#copyAll').onclick = async () => toast(await copy(postText()) ? '복사했어요' : '복사가 안 됐어요. 길게 눌러 복사해 주세요');
+$('#shareBtn').onclick = async () => {
+  if (navigator.share) { try { await navigator.share({ title: $('#postTitle').value, text: postText() }); } catch (e) {} }
+  else toast(await copy(postText()) ? '공유가 안 되는 브라우저라 복사했어요' : '복사가 안 됐어요');
+};
+$('#openCafe').onclick = async () => {
+  let url = $('#cafeUrl').value.trim();
+  if (!url) { toast('카페 주소를 먼저 넣어 주세요'); $('#cafeUrl').focus(); return; }
+  if (!/^https?:\/\//.test(url)) url = 'https://' + url;
+  store.set('cafeUrl', url);
+  await copy(postText());
+  window.open(url, '_blank');
+  toast('복사했어요. 카페에서 글쓰기 후 붙여넣기!');
+};
+
+renderGrid();
+showTab(store.get('tab', 'gen'));
+fetch('draws.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : Promise.reject(r.status)).then(j => {
+  draws = j.draws || [];
+  const d = draws[draws.length - 1];
+  $('#dataInfo').textContent = d ? `${d.no}회(${d.date})까지 ${draws.length}회 당첨번호로 연구 중 · 다음은 ${nextNo()}회` : '당첨번호가 비어 있어요';
+  renderPicks(); renderStats(); renderMine();
+  if ($('#postBody').value) fillPost();
+}).catch(() => { $('#dataInfo').textContent = '당첨번호를 아직 못 받았어요 (랜덤·균형형 뽑기는 돼요)'; renderStats(); });
+</script>
+</body>
+</html>
