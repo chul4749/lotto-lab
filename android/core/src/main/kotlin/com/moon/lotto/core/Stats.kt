@@ -1,10 +1,15 @@
 package com.moon.lotto.core
 
+import java.time.LocalDate
+
 /** 당첨번호 통계. draws 는 오래된 회차부터. */
 class Stats(val draws: List<Draw>) {
     val last: Draw? get() = draws.lastOrNull()
     val latestNo get() = last?.no ?: 0
     val nextNo get() = latestNo + 1
+
+    /** 다음 추첨일(매주 토요일). 당첨번호가 없으면 null */
+    val nextDrawDate: LocalDate? get() = last?.let { runCatching { LocalDate.parse(it.date).plusDays(7) }.getOrNull() }
 
     val pastSet: Set<List<Int>> by lazy { draws.mapTo(HashSet()) { it.nums } }
 

@@ -22,7 +22,7 @@ import com.moon.lotto.core.SimSummary
 import com.moon.lotto.core.Stats
 import com.moon.lotto.core.Strategy
 import com.moon.lotto.core.history
-import com.moon.lotto.core.pickInfo
+import com.moon.lotto.core.bestEver
 import com.moon.lotto.data.DrawRepository
 import com.moon.lotto.data.Prefs
 import kotlinx.coroutines.Dispatchers
@@ -32,11 +32,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 
-enum class Tab(val label: String) { GEN("뽑기"), STAT("통계"), SIM("시뮬"), MINE("내 번호"), CAFE("카페") }
+enum class Tab(val label: String, val emoji: String) {
+    GEN("뽑기", "🎲"), STAT("통계", "📊"), SIM("실험실", "🧪"), MINE("내 번호", "🎟️"), CAFE("카페", "✍️"),
+}
 enum class Cell { FIX, EX }
 
-/** 방금 뽑은 번호 한 줄 */
-data class PickRow(val pick: Pick, val info: String)
+/** 방금 뽑은 번호 한 줄. best = 역대 최고 등수와 회차 */
+data class PickRow(val pick: Pick, val best: Pair<Int, Int>?)
 
 class UntilView(val nums: List<Int>, val weeks: Long, val cnt: LongArray, val won: Boolean, val running: Boolean)
 
@@ -46,6 +48,9 @@ class LottoViewModel(app: Application) : AndroidViewModel(app) {
 
     var tab by mutableStateOf(Tab.GEN)
     var message by mutableStateOf<String?>(null)
+    var showHelp by mutableStateOf(false)
+    var showGuide by mutableStateOf(!prefs.seenGuide)
+        private set
 
     var stats by mutableStateOf(Stats(emptyList()))
 
@@ -61,6 +66,9 @@ class LottoViewModel(app: Application) : AndroidViewModel(app) {
     var filters by mutableStateOf(Filters())
     val grid = mutableStateMapOf<Int, Cell>()
     var picks by mutableStateOf(listOf<PickRow>())
+        private set
+    /** 뽑을 때마다 늘어서 공 애니메이션을 다시 돌린다 */
+    var genCount by mutableIntStateOf(0)
         private set
     val savedRows = mutableStateListOf<Int>()
 
@@ -108,7 +116,7 @@ class LottoViewModel(app: Application) : AndroidViewModel(app) {
         stats = Stats(draws)
         val d = stats.last!!
         dataInfo = "${d.no}회(${d.date})까지 ${draws.size}회로 연구 중 · 다음은 ${stats.nextNo}회"
-        picks = picks.map { it.copy(info = stats.pickInfo(it.pick.nums)) }
+        picks = picks.map { it.copy(best = stats.bestEver(it.pick.nums)) }
     }
 
     // ---------- 뽑기 ----------
@@ -128,19 +136,32 @@ class LottoViewModel(app: Application) : AndroidViewModel(app) {
         val r = Generator(stats).generate(strategy, range, games, fixed, excluded, filters, seedText, LocalDate.now().toString())
         r.error?.let { message = it }
         if (r.picks.isEmpty()) return
-        picks = r.picks.map { PickRow(Pick(it, stats.nextNo, strategy), stats.pickInfo(it)) }
+        picks = r.picks.map { PickRow(Pick(it, stats.nextNo, strategy), stats.bestEver(it)) }
         savedRows.clear()
+        genCount++
     }
 
-    fun saveRow(i: Int) {
-        if (i in savedRows) return
-        addSaved(picks[i].pick)
-        savedRows += i
+    /** ☆ 누르면 저장, ★ 다시 누르면 저장 취소 */
+    fun toggleRow(i: Int) {
+        val p = picks[i].pick
+        if (i in savedRows) {
+            savedRows.remove(i)
+            val k = saved.indexOfFirst { it.nums == p.nums && it.round == p.round }
+            if (k >= 0) deleteSaved(k)
+        } else {
+            addSaved(p)
+            savedRows += i
+        }
+    }
+
+    fun dismissGuide() {
+        showGuide = false
+        prefs.seenGuide = true
     }
 
     fun saveAll() {
-        picks.indices.forEach { saveRow(it) }
-        message = "${picks.size}게임 저장했어요"
+        picks.indices.filter { it !in savedRows }.forEach { toggleRow(it) }
+        message = "${picks.size}게임을 내 번호에 저장했어요"
     }
 
     private fun addSaved(p: Pick) {
@@ -224,4 +245,8 @@ class LottoViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     val postText get() = "$postTitle\n\n$postBody"
+
+    fun resetFilters() {
+        filters = Filters()
+    }
 }

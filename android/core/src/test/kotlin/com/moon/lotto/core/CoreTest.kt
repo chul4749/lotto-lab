@@ -138,7 +138,7 @@ class CoreTest {
         val b = PostBuilder(stats, "연구소장")
         val pick = Pick(listOf(3, 11, 17, 25, 33, 41), stats.nextNo, Strategy.HOT)
         val post = b.pick(listOf(pick), listOf(11), listOf(9), 50)
-        assertTrue(post.title.contains("핫 번호 위주"))
+        assertEquals("[연구번호] ${stats.nextNo}회 핫 번호 조합 공유합니다", post.title)
         assertTrue(post.body.contains("A)  3, 11, 17, 25, 33, 41") && post.body.contains("고정수: 11") && post.body.endsWith("— 연구소장 (로또 1등 연구소)"))
         assertTrue(b.report(50).body.contains("${stats.latestNo}회"))
         assertTrue(b.pairs(50).body.contains("짝꿍 번호 TOP 10"))
@@ -148,6 +148,11 @@ class CoreTest {
         assertEquals("18.8억 원", won(1_881_025_430))
         assertEquals("7,838만 원", won(78_376_060))
         assertEquals("5,000원", won(5000))
+    }
+
+    @Test fun `다음 추첨일`() {
+        assertEquals(java.time.LocalDate.parse(stats.last!!.date).plusDays(7), stats.nextDrawDate)
+        assertEquals(java.time.DayOfWeek.SATURDAY, stats.nextDrawDate!!.dayOfWeek)
     }
 
     @Test fun `번호 읽기`() {

@@ -7,25 +7,23 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -33,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.moon.lotto.ui.CafeScreen
 import com.moon.lotto.ui.GenScreen
+import com.moon.lotto.ui.HelpScreen
 import com.moon.lotto.ui.LottoTheme
 import com.moon.lotto.ui.MineScreen
 import com.moon.lotto.ui.SimScreen
@@ -55,45 +54,47 @@ fun LottoApp(vm: LottoViewModel = viewModel()) {
             snackbar.showSnackbar(it)
         }
     }
-    BackHandler(enabled = vm.tab != Tab.GEN) { vm.tab = Tab.GEN }
+    BackHandler(enabled = vm.showHelp || vm.tab != Tab.GEN) {
+        if (vm.showHelp) vm.showHelp = false else vm.tab = Tab.GEN
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 Tab.entries.forEach { t ->
                     NavigationBarItem(
-                        selected = vm.tab == t,
+                        selected = vm.tab == t && !vm.showHelp,
                         onClick = {
+                            vm.showHelp = false
                             vm.tab = t
                             if (t == Tab.CAFE && vm.postBody.isEmpty()) vm.fillPost()
                         },
-                        icon = {
-                            Icon(
-                                when (t) {
-                                    Tab.GEN -> Icons.Filled.Star
-                                    Tab.STAT -> Icons.Filled.Info
-                                    Tab.SIM -> Icons.Filled.PlayArrow
-                                    Tab.MINE -> Icons.Filled.Favorite
-                                    Tab.CAFE -> Icons.Filled.Share
-                                },
-                                contentDescription = null,
-                            )
-                        },
-                        label = { Text(t.label) },
+                        icon = { Text(t.emoji, fontSize = 20.sp) },
+                        label = { Text(t.label, fontWeight = if (vm.tab == t) FontWeight.Bold else FontWeight.Normal) },
+                        colors = NavigationBarItemDefaults.colors(indicatorColor = MaterialTheme.colorScheme.primaryContainer),
                     )
                 }
             }
         },
     ) { pad ->
-        Column(Modifier.fillMaxSize().padding(pad)) {
-            Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)) {
-                Text("🎱 로또 1등 연구소", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                Text(vm.dataInfo, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(Modifier.fillMaxSize().padding(pad).imePadding()) {
+            Row(Modifier.padding(start = 16.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        if (vm.showHelp) "도움말" else "🎱 로또 1등 연구소",
+                        fontSize = 20.sp, fontWeight = FontWeight.ExtraBold,
+                    )
+                    Text(vm.dataInfo, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                TextButton(onClick = { vm.showHelp = !vm.showHelp }) {
+                    Text(if (vm.showHelp) "✕ 닫기" else "❓ 도움말")
+                }
             }
             Box(Modifier.weight(1f)) {
-                when (vm.tab) {
+                if (vm.showHelp) HelpScreen(vm)
+                else when (vm.tab) {
                     Tab.GEN -> GenScreen(vm)
                     Tab.STAT -> StatScreen(vm)
                     Tab.SIM -> SimScreen(vm)

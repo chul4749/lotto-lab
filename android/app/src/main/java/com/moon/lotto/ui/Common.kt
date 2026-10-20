@@ -80,7 +80,7 @@ fun ScreenColumn(content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-fun SectionCard(title: String? = null, subtitle: String? = null, content: @Composable ColumnScope.() -> Unit) {
+fun SectionCard(title: String? = null, subtitle: String? = null, explain: String? = null, content: @Composable ColumnScope.() -> Unit) {
     Card(
         Modifier.fillMaxWidth().padding(bottom = 12.dp),
         shape = RoundedCornerShape(14.dp),
@@ -93,6 +93,7 @@ fun SectionCard(title: String? = null, subtitle: String? = null, content: @Compo
                     Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     if (subtitle != null) Text("  $subtitle", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
+                if (explain != null) Explain(explain)
                 Spacer(Modifier.height(10.dp))
             }
             content()

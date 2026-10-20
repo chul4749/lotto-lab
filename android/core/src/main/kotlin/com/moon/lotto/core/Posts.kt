@@ -2,13 +2,13 @@ package com.moon.lotto.core
 
 data class Post(val title: String, val body: String)
 
-enum class PostKind(val label: String) {
-    PICK("이번 주 연구 번호"),
-    REPORT("주간 통계 리포트"),
-    PAIRS("짝꿍·구간 분석"),
-    HIST("내 조합 역대 성적"),
-    SIM("시뮬레이션 결과"),
-    CHECK("당첨 확인 결과"),
+enum class PostKind(val label: String, val emoji: String, val desc: String) {
+    PICK("이번 주 연구 번호", "🎱", "뽑기에서 뽑은 번호를 소개해요"),
+    REPORT("주간 당첨 리포트", "📢", "지난주 당첨번호와 핫·콜드 번호 정리"),
+    PAIRS("짝꿍·구간 분석", "🤝", "자주 같이 나온 번호, 구간·끝수 분석"),
+    HIST("내 번호 역대 성적", "🕰", "실험실 '옛날부터 샀다면' 결과"),
+    SIM("가상 추첨 결과", "🎰", "실험실 '매주 산다면'·'1등까지' 결과"),
+    CHECK("당첨 확인", "🎟", "저장한 번호의 이번 주 결과"),
 }
 
 /** 시뮬 탭에서 마지막으로 돌린 결과 */
@@ -40,7 +40,7 @@ class PostBuilder(private val stats: Stats, nick: String) {
             b.append("\n콜드 번호: ${stats.coldList().take(6).joinToString(", ")}")
         }
         b.append("\n\n여러분 번호도 댓글로 남겨 주세요!")
-        return Post("[연구번호] ${stats.nextNo}회 $strategy 번호 공유합니다", end(b.toString()))
+        return Post("[연구번호] ${stats.nextNo}회 ${strategy.ifEmpty { "연구" }} 조합 공유합니다", end(b.toString()))
     }
 
     fun report(r: Int): Post {

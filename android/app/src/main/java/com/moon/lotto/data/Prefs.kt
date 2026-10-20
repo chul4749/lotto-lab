@@ -18,6 +18,10 @@ class Prefs(context: Context) {
         get() = sp.getString("nick", "") ?: ""
         set(v) = sp.edit().putString("nick", v).apply()
 
+    var seenGuide: Boolean
+        get() = sp.getBoolean("seenGuide", false)
+        set(v) = sp.edit().putBoolean("seenGuide", v).apply()
+
     fun loadSaved(): List<Pick> = runCatching {
         val arr = JSONArray(sp.getString("saved", "[]"))
         (0 until arr.length()).map { i ->
