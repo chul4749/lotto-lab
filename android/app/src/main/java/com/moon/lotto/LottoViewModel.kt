@@ -246,6 +246,19 @@ class LottoViewModel(app: Application) : AndroidViewModel(app) {
 
     val postText get() = "$postTitle\n\n$postBody"
 
+    /** 화면 캡처용: 번호를 뽑고 실험실·카페에 결과를 채운다 */
+    fun demo() {
+        if (stats.draws.isEmpty() || picks.isNotEmpty()) return
+        generate()
+        if (saved.isEmpty()) {
+            toggleRow(0)
+            toggleRow(1)
+        }
+        runHist(picks[0].pick.nums)
+        runYears()
+        fillPost()
+    }
+
     fun resetFilters() {
         filters = Filters()
     }

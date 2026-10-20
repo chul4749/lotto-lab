@@ -41,13 +41,21 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { LottoTheme { LottoApp() } }
+        // tab·demo 는 화면 캡처(tools/screens.sh)용
+        val tab = intent.getStringExtra("tab")
+        val demo = intent.getBooleanExtra("demo", false)
+        setContent { LottoTheme { LottoApp(startTab = tab, demo = demo) } }
     }
 }
 
 @Composable
-fun LottoApp(vm: LottoViewModel = viewModel()) {
+fun LottoApp(vm: LottoViewModel = viewModel(), startTab: String? = null, demo: Boolean = false) {
     val snackbar = remember { SnackbarHostState() }
+    LaunchedEffect(Unit) {
+        if (startTab == "HELP") vm.showHelp = true
+        Tab.entries.firstOrNull { it.name == startTab }?.let { vm.tab = it }
+    }
+    LaunchedEffect(vm.stats) { if (demo) vm.demo() }
     LaunchedEffect(vm.message) {
         vm.message?.let {
             vm.message = null
