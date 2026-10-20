@@ -28,7 +28,7 @@ class PostBuilder(private val stats: Stats, nick: String) {
         val strategy = picks.firstOrNull()?.strategy?.label ?: ""
         val rl = if (range > 0) "최근 ${range}회" else "전체 회차"
         val b = StringBuilder("🎱 ${stats.nextNo}회 연구 번호\n\n방식: ${strategy.ifEmpty { "-" }}")
-        if (stats.draws.isNotEmpty()) b.append(" ($rl 분석)")
+        if (stats.draws.isNotEmpty() && picks.firstOrNull()?.strategy?.usesStats == true) b.append(" ($rl 분석)")
         b.append('\n')
         if (fixed.isNotEmpty()) b.append("고정수: ${fixed.sorted().joinToString(", ")}\n")
         if (excluded.isNotEmpty()) b.append("제외수: ${excluded.sorted().joinToString(", ")}\n")
