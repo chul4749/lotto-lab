@@ -1,0 +1,42 @@
+name: android
+
+# 안드로이드 앱을 빌드해서 Releases 의 app-latest 에 APK 를 올린다. 휴대폰에서 그 APK 를 받아 설치한다.
+on:
+  push:
+    branches: [main]
+    paths: ["android/**", ".github/workflows/android.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Test and build
+        run: ./gradlew --no-daemon :core:test :app:assembleRelease
+      - name: Release APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk lotto-lab.apk
+          gh release delete app-latest --yes --cleanup-tag || true
+          gh release create app-latest lotto-lab.apk \
+            --title "로또 1등 연구소 앱 1.0.${{ github.run_number }}" \
+            --notes "휴대폰에서 lotto-lab.apk 를 눌러 받은 뒤 설치하세요. (처음이면 '출처를 알 수 없는 앱' 허용 필요)" \
+            --target "${{ github.sha }}"
