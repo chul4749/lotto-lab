@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  pages: write
 
 jobs:
   draws:
@@ -25,3 +26,7 @@ jobs:
           git add draws.json
           git commit -m "당첨번호 갱신"
           git push
+          # 봇(GITHUB_TOKEN)이 올린 커밋은 Pages 를 다시 만들지 않을 수 있어 직접 요청한다
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" || true
+        env:
+          GH_TOKEN: ${{ github.token }}
