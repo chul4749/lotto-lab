@@ -98,7 +98,7 @@ fun MineScreen(vm: LottoViewModel) = ScreenColumn {
                         }
                     }
                     Column {
-                        TextButton(onClick = { vm.tab = Tab.SIM; vm.runHist(p.nums) }) { Text("옛날엔?") }
+                        TextButton(onClick = { vm.openLab(); vm.runHist(p.nums) }) { Text("옛날엔?") }
                         TextButton(onClick = { vm.deleteSaved(index) }) { Text("삭제", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
                 }

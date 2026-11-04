@@ -1,6 +1,10 @@
 package com.moon.lotto.core
 
-/** 한 회차 당첨 결과. nums 는 오름차순 6개, prizes 는 1~5등 1게임당 당첨금(모르면 비어 있음). */
+/**
+ * 한 회차 당첨 결과. nums 는 오름차순 6개.
+ * prizes·counts 는 1~5등 1게임당 당첨금과 당첨자 수(모르면 비어 있음),
+ * sales 는 총 판매액, auto·semi·manual 은 1등 중 자동·반자동·수동 인원.
+ */
 data class Draw(
     val no: Int,
     val date: String,
@@ -9,6 +13,11 @@ data class Draw(
     val prize: Long = 0,
     val winners: Int = 0,
     val prizes: List<Long> = emptyList(),
+    val counts: List<Long> = emptyList(),
+    val sales: Long = 0,
+    val auto: Int = 0,
+    val semi: Int = 0,
+    val manual: Int = 0,
 )
 
 /**

@@ -20,12 +20,14 @@ open_tab() { adb shell am start -S -W -n com.moon.lotto/.MainActivity --es tab "
 
 for mode in light dark; do
   [ "$mode" = dark ] && adb shell cmd uimode night yes
-  open_tab GEN;  cap "$mode-1gen-a"; down; cap "$mode-1gen-b"; down; cap "$mode-1gen-c"
+  open_tab HOME; cap "$mode-0home-a"; down; cap "$mode-0home-b"; down; cap "$mode-0home-c"
   [ "$mode" = dark ] && continue
-  open_tab STAT; cap "$mode-2stat-a"; down; cap "$mode-2stat-b"; down; down; cap "$mode-2stat-c"
-  open_tab SIM;  cap "$mode-3sim-a"; down; cap "$mode-3sim-b"
-  open_tab MINE; cap "$mode-4mine-a"; down; cap "$mode-4mine-b"
-  open_tab CAFE; cap "$mode-5cafe-a"; down; cap "$mode-5cafe-b"; down; cap "$mode-5cafe-c"
-  open_tab HELP; cap "$mode-6help-a"
+  open_tab GEN;  cap "$mode-1gen-a"; down; cap "$mode-1gen-b"
+  open_tab DRAW; cap "$mode-2draw-a"; down; cap "$mode-2draw-b"; down; cap "$mode-2draw-c"
+  open_tab STAT; cap "$mode-3stat-a"
+  open_tab LAB;  cap "$mode-4lab-a"
+  open_tab MINE; cap "$mode-5mine-a"
+  open_tab CAFE; cap "$mode-6cafe-a"
+  open_tab HELP; cap "$mode-7help-a"
 done
 ls -la shots

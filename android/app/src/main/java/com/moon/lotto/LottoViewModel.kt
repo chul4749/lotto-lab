@@ -22,7 +22,10 @@ import com.moon.lotto.core.SimSummary
 import com.moon.lotto.core.Stats
 import com.moon.lotto.core.Strategy
 import com.moon.lotto.core.history
+import com.moon.lotto.core.Schedule
 import com.moon.lotto.core.bestEver
+import com.moon.lotto.core.dailyPicks
+import java.time.LocalDate
 import com.moon.lotto.data.DrawRepository
 import com.moon.lotto.data.Prefs
 import kotlinx.coroutines.Dispatchers
@@ -30,11 +33,13 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
 
 enum class Tab(val label: String, val emoji: String) {
-    GEN("뽑기", "🎲"), STAT("통계", "📊"), SIM("실험실", "🧪"), MINE("내 번호", "🎟️"), CAFE("카페", "✍️"),
+    HOME("홈", "🏠"), GEN("뽑기", "🎲"), ANALYZE("분석", "📊"), MINE("내 번호", "🎟️"), CAFE("카페", "✍️"),
 }
+
+/** 분석 탭 안의 작은 탭 */
+enum class Sub(val label: String) { DRAW("회차"), STAT("통계"), LAB("실험실") }
 enum class Cell { FIX, EX }
 
 /** 방금 뽑은 번호 한 줄. best = 역대 최고 등수와 회차 */
@@ -46,7 +51,16 @@ class LottoViewModel(app: Application) : AndroidViewModel(app) {
     private val repo = DrawRepository(app)
     private val prefs = Prefs(app)
 
-    var tab by mutableStateOf(Tab.GEN)
+    var tab by mutableStateOf(Tab.HOME)
+    var sub by mutableStateOf(Sub.DRAW)
+
+    /** 분석 > 회차에서 보고 있는 회차 (0이면 최신) */
+    var drawNo by mutableIntStateOf(0)
+
+    /** 오늘의 추천번호 (홈) */
+    var daily by mutableStateOf(listOf<List<Int>>())
+        private set
+    val today: LocalDate get() = LocalDate.now(Schedule.ZONE)
     var message by mutableStateOf<String?>(null)
     var showHelp by mutableStateOf(false)
     var showGuide by mutableStateOf(!prefs.seenGuide)
@@ -117,6 +131,7 @@ class LottoViewModel(app: Application) : AndroidViewModel(app) {
         val d = stats.last!!
         dataInfo = "${d.no}회(${d.date})까지 ${draws.size}회로 연구 중 · 다음은 ${stats.nextNo}회"
         picks = picks.map { it.copy(best = stats.bestEver(it.pick.nums)) }
+        daily = stats.dailyPicks(today)
     }
 
     // ---------- 뽑기 ----------
@@ -219,6 +234,19 @@ class LottoViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     // ---------- 카페 ----------
+    fun openLab() {
+        tab = Tab.ANALYZE
+        sub = Sub.LAB
+    }
+
+    /** 오늘의 추천번호를 내 번호에 저장 */
+    fun saveDaily() {
+        val have = saved.filter { it.round == stats.nextNo }.map { it.nums }.toSet()
+        val add = daily.filter { it !in have }
+        add.forEach { addSaved(Pick(it, stats.nextNo, Strategy.BALANCE)) }
+        message = if (add.isEmpty()) "이미 저장돼 있어요" else "${add.size}게임을 내 번호에 저장했어요"
+    }
+
     fun openPost(kind: PostKind) {
         postKind = kind
         fillPost()
@@ -228,6 +256,7 @@ class LottoViewModel(app: Application) : AndroidViewModel(app) {
     fun fillPost() {
         val b = PostBuilder(stats, nick)
         val p: Post = when (postKind) {
+            PostKind.DAILY -> b.daily(daily, today)
             PostKind.PICK -> b.pick(picks.map { it.pick }.ifEmpty { saved.filter { it.round == stats.nextNo }.take(10) }, fixed, excluded, range)
             PostKind.REPORT -> b.report(statRange)
             PostKind.PAIRS -> b.pairs(statRange)

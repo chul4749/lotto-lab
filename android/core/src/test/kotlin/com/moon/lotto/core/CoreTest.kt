@@ -13,9 +13,17 @@ class CoreTest {
     private val draws: List<Draw> by lazy {
         val text = generateSequence(File("").absoluteFile) { it.parentFile }
             .map { File(it, "draws.json") }.first { it.exists() }.readText()
-        Regex("\"no\":(\\d+),\"date\":\"([^\"]+)\",\"nums\":\\[([\\d,]+)],\"bonus\":(\\d+)").findAll(text).map { m ->
-            Draw(m.groupValues[1].toInt(), m.groupValues[2], m.groupValues[3].split(',').map { it.toInt() }, m.groupValues[4].toInt())
-        }.toList()
+        val num = "(\\d+)"
+        val arr = "\\[([\\d,]+)]"
+        Regex("\"no\":$num,\"date\":\"([^\"]+)\",\"nums\":$arr,\"bonus\":$num,\"prize\":$num,\"winners\":$num,\"prizes\":$arr,\"counts\":$arr,\"sales\":$num")
+            .findAll(text).map { m ->
+                val g = m.groupValues
+                fun longs(t: String) = t.split(',').map { it.toLong() }
+                Draw(
+                    g[1].toInt(), g[2], g[3].split(',').map { it.toInt() }, g[4].toInt(),
+                    prize = g[5].toLong(), winners = g[6].toInt(), prizes = longs(g[7]), counts = longs(g[8]), sales = g[9].toLong(),
+                )
+            }.toList()
     }
     private val stats by lazy { Stats(draws) }
 
@@ -153,6 +161,42 @@ class CoreTest {
     @Test fun `다음 추첨일`() {
         assertEquals(java.time.LocalDate.parse(stats.last!!.date).plusDays(7), stats.nextDrawDate)
         assertEquals(java.time.DayOfWeek.SATURDAY, stats.nextDrawDate!!.dayOfWeek)
+    }
+
+    @Test fun `세후 당첨금`() {
+        // 1248회 실제 당첨금
+        assertEquals(1_328_551_500, afterTax(1_933_658_450))
+        assertEquals(41_435_765, afterTax(53_122_485))
+        assertEquals(1_480_597, afterTax(1_480_597))
+        assertEquals(50_000, afterTax(50_000))
+    }
+
+    @Test fun `역대 기록`() {
+        val r = stats.records()
+        assertEquals(draws.size, r.draws)
+        assertTrue(r.totalSales > 80_000_000_000_000)
+        assertTrue(r.firstWinners > 10_000)
+        assertEquals(19, r.maxFirst!!.no)
+        assertTrue(r.avgFirst in 1_500_000_000..2_500_000_000)
+        val last = stats.last!!
+        assertEquals(5, last.counts.size)
+    }
+
+    @Test fun `오늘의 추천번호는 같은 날 같다`() {
+        val d = java.time.LocalDate.of(2026, 11, 4)
+        assertEquals(stats.dailyPicks(d), stats.dailyPicks(d))
+        assertEquals(5, stats.dailyPicks(d).size)
+        assertTrue(stats.dailyPicks(d) != stats.dailyPicks(d.plusDays(1)))
+    }
+
+    @Test fun `판매 마감 시각`() {
+        val z = Schedule.ZONE
+        val wed = java.time.ZonedDateTime.of(2026, 11, 4, 15, 0, 0, 0, z)
+        assertEquals(Schedule.Sale(true, java.time.ZonedDateTime.of(2026, 11, 7, 20, 0, 0, 0, z)), Schedule.sale(wed))
+        val satNight = java.time.ZonedDateTime.of(2026, 11, 7, 21, 0, 0, 0, z)
+        assertEquals(Schedule.Sale(false, java.time.ZonedDateTime.of(2026, 11, 8, 6, 0, 0, 0, z)), Schedule.sale(satNight))
+        val sunMorning = java.time.ZonedDateTime.of(2026, 11, 8, 7, 0, 0, 0, z)
+        assertEquals(Schedule.Sale(true, java.time.ZonedDateTime.of(2026, 11, 14, 20, 0, 0, 0, z)), Schedule.sale(sunMorning))
     }
 
     @Test fun `번호 읽기`() {

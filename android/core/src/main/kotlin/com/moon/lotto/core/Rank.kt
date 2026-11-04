@@ -73,3 +73,14 @@ fun Stats.pickInfo(nums: List<Int>): String {
     val b = bestEver(nums)
     return s + if (b != null) " · 역대 최고 ${b.first}등(${b.second}회)" else " · 역대 3개 이상 맞은 적 없음"
 }
+
+/**
+ * 세금 뗀 당첨금. 200만 원 이하는 세금 없음, 넘으면 1,000원(복권값)을 뺀 금액에
+ * 3억 원까지 22%, 넘는 부분 33%. 세금은 10원 아래를 버린다.
+ */
+fun afterTax(prize: Long): Long {
+    if (prize <= 2_000_000) return prize
+    val base = prize - 1000
+    val tax = if (base <= 300_000_000) base * 0.22 else 300_000_000 * 0.22 + (base - 300_000_000) * 0.33
+    return prize - (tax.toLong() / 10 * 10)
+}

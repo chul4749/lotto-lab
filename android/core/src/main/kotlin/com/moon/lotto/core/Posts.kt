@@ -4,6 +4,7 @@ data class Post(val title: String, val body: String)
 
 enum class PostKind(val label: String, val emoji: String, val desc: String) {
     PICK("이번 주 연구 번호", "🎱", "뽑기에서 뽑은 번호를 소개해요"),
+    DAILY("오늘의 추천번호", "🍀", "홈의 오늘의 추천 5게임"),
     REPORT("주간 당첨 리포트", "📢", "지난주 당첨번호와 핫·콜드 번호 정리"),
     PAIRS("짝꿍·구간 분석", "🤝", "자주 같이 나온 번호, 구간·끝수 분석"),
     HIST("내 번호 역대 성적", "🕰", "실험실 '옛날부터 샀다면' 결과"),
@@ -43,6 +44,17 @@ class PostBuilder(private val stats: Stats, nick: String) {
         return Post("[연구번호] ${stats.nextNo}회 ${strategy.ifEmpty { "연구" }} 조합 공유합니다", end(b.toString()))
     }
 
+    fun daily(picks: List<List<Int>>, date: java.time.LocalDate): Post {
+        if (picks.isEmpty()) return noData()
+        val body = "🍀 ${date.monthValue}월 ${date.dayOfMonth}일 오늘의 추천번호 (${stats.nextNo}회용)\n\n" +
+            picks.mapIndexed { i, p ->
+                val odd = Nums.oddCount(p)
+                "${letter(i)})  ${line(p)}   (홀짝 $odd:${6 - odd} · 합 ${p.sum()})"
+            }.joinToString("\n") +
+            "\n\n홀짝이 한쪽에 몰리지 않고 합이 흔한 범위(100~175)인 균형형으로 골랐어요.\n오늘 하루 동안은 누구에게나 같은 번호예요. 여러분은 어떤 번호 고르셨나요?"
+        return Post("[오늘의 추천] ${date.monthValue}/${date.dayOfMonth} ${stats.nextNo}회 추천번호 5게임", end(body))
+    }
+
     fun report(r: Int): Post {
         val d = stats.last ?: return noData()
         val f = stats.freq(r)
@@ -50,8 +62,9 @@ class PostBuilder(private val stats: Stats, nick: String) {
         val odd = Nums.oddCount(d.nums)
         val prev = stats.draws.getOrNull(stats.draws.size - 2)
         val carried = prev?.let { p -> d.nums.filter { it in p.nums } } ?: emptyList()
-        val prize = if (d.prize > 0) "\n1등 ${d.winners}명 · 1인당 ${won(d.prize)}" else ""
-        val body = "📢 ${d.no}회 (${d.date}) 당첨번호\n\n${line(d.nums)}  + 보너스 ${d.bonus}$prize\n\n" +
+        val prize = if (d.prize > 0) "\n1등 ${d.winners}명 · 1인당 ${won(d.prize)} (세후 ${won(afterTax(d.prize))})" else ""
+        val ranks = if (d.counts.size == 5) "\n" + (1..4).joinToString("\n") { "${it + 1}등 ${d.counts[it].comma()}명 · ${won(d.prizes[it])}" } else ""
+        val body = "📢 ${d.no}회 (${d.date}) 당첨번호\n\n${line(d.nums)}  + 보너스 ${d.bonus}$prize$ranks\n\n" +
             "· 합계 ${d.nums.sum()} · 홀짝 $odd:${6 - odd} · 구간 ${Nums.zonePattern(d.nums).joinToString("-")}\n" +
             "· 연속번호 ${if (Nums.hasConsec(d.nums)) "있음" else "없음"} · 이월수 ${if (carried.isEmpty()) "없음" else carried.joinToString(", ")}\n\n" +
             "🔥 ${rangeLabel(r)} 핫 번호\n${stats.hotList(r).take(6).joinToString(", ") { "${it}번(${f[it]}회)" }}\n\n" +

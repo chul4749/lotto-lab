@@ -53,6 +53,11 @@ class DrawRepository(private val context: Context) {
                     prize = o.optLong("prize"),
                     winners = o.optInt("winners"),
                     prizes = if (prizes == null) emptyList() else (0 until prizes.length()).map { prizes.getLong(it) },
+                    counts = o.optJSONArray("counts")?.let { c -> (0 until c.length()).map { c.getLong(it) } } ?: emptyList(),
+                    sales = o.optLong("sales"),
+                    auto = o.optInt("auto"),
+                    semi = o.optInt("semi"),
+                    manual = o.optInt("manual"),
                 )
             }.sortedBy { it.no }
         }

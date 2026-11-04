@@ -29,13 +29,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.moon.lotto.ui.AnalyzeScreen
 import com.moon.lotto.ui.CafeScreen
 import com.moon.lotto.ui.GenScreen
 import com.moon.lotto.ui.HelpScreen
+import com.moon.lotto.ui.HomeScreen
 import com.moon.lotto.ui.LottoTheme
 import com.moon.lotto.ui.MineScreen
-import com.moon.lotto.ui.SimScreen
-import com.moon.lotto.ui.StatScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,6 +54,7 @@ fun LottoApp(vm: LottoViewModel = viewModel(), startTab: String? = null, demo: B
     LaunchedEffect(Unit) {
         if (startTab == "HELP") vm.showHelp = true
         Tab.entries.firstOrNull { it.name == startTab }?.let { vm.tab = it }
+        Sub.entries.firstOrNull { it.name == startTab }?.let { vm.tab = Tab.ANALYZE; vm.sub = it }
     }
     LaunchedEffect(vm.stats) { if (demo) vm.demo() }
     LaunchedEffect(vm.message) {
@@ -62,8 +63,8 @@ fun LottoApp(vm: LottoViewModel = viewModel(), startTab: String? = null, demo: B
             snackbar.showSnackbar(it)
         }
     }
-    BackHandler(enabled = vm.showHelp || vm.tab != Tab.GEN) {
-        if (vm.showHelp) vm.showHelp = false else vm.tab = Tab.GEN
+    BackHandler(enabled = vm.showHelp || vm.tab != Tab.HOME) {
+        if (vm.showHelp) vm.showHelp = false else vm.tab = Tab.HOME
     }
 
     Scaffold(
@@ -103,9 +104,9 @@ fun LottoApp(vm: LottoViewModel = viewModel(), startTab: String? = null, demo: B
             Box(Modifier.weight(1f)) {
                 if (vm.showHelp) HelpScreen(vm)
                 else when (vm.tab) {
+                    Tab.HOME -> HomeScreen(vm)
                     Tab.GEN -> GenScreen(vm)
-                    Tab.STAT -> StatScreen(vm)
-                    Tab.SIM -> SimScreen(vm)
+                    Tab.ANALYZE -> AnalyzeScreen(vm)
                     Tab.MINE -> MineScreen(vm)
                     Tab.CAFE -> CafeScreen(vm)
                 }
