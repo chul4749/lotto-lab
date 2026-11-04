@@ -156,6 +156,8 @@ class CoreTest {
         assertEquals("18.8억 원", won(1_881_025_430))
         assertEquals("7,838만 원", won(78_376_060))
         assertEquals("5,000원", won(5000))
+        assertEquals("90조 6,877억 원", won(90_687_740_000_000))
+        assertEquals("1조 원", won(1_000_000_000_000))
     }
 
     @Test fun `다음 추첨일`() {

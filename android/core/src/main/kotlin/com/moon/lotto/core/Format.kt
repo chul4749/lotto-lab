@@ -13,6 +13,11 @@ fun pct(a: Long, b: Long): Double = if (b == 0L) 0.0 else Math.round(a * 1000.0 
 fun pct(a: Int, b: Int): Double = pct(a.toLong(), b.toLong())
 
 fun won(n: Long): String = when {
+    n >= 1_000_000_000_000 -> {
+        val jo = n / 1_000_000_000_000
+        val eok = n % 1_000_000_000_000 / 100_000_000
+        "${jo.comma()}조" + (if (eok > 0) " ${eok.comma()}억" else "") + " 원"
+    }
     n >= 100_000_000 -> (Math.round(n / 10_000_000.0) / 10.0).short() + "억 원"
     n >= 10_000 -> Math.round(n / 10_000.0).comma() + "만 원"
     else -> n.comma() + "원"
